@@ -62,10 +62,10 @@ sensible HTTP statuses. Raw server errors are never exposed.
 | GET | `/cron/monitor` | Requires `x-cron-secret: $APP_SECRET`. Re-checks due monitored channels. |
 | GET | `/health` | Liveness + DB reachability. |
 
-## Rate limiting & safety
+## VPS worker\n\nThe persistent Telethon process polls the PHP API for queued `discovery_jobs`. It sends an authenticated `POST /worker/heartbeat` every 15 seconds, claims jobs through `POST /worker/claim`, imports public channel metadata, and reports progress/completion. The admin connection test considers the worker online only when its heartbeat is no older than 45 seconds.\n\n## Rate limiting & safety
 
 - Discovery runner throttles provider work and writes progress to the DB (worker-agnostic).
-- The Telethon worker respects `FloodWaitError` cooldowns exactly; retries with capped backoff.
+- The Telethon worker respects `FloodWaitError` cooldowns and reports its authenticated VPS/Telegram connection state through worker heartbeats.
 - All writes are parameterised (Drizzle). Inputs are validated/sanitised server-side.
 - Telegram and AI secrets are encrypted with AES-256-GCM (`APP_SECRET` derived key) and never
   serialised to the client.

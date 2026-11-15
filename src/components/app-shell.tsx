@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Radar, Database, BarChart3, GitCompareArrows, Bookmark,
   Megaphone, Swords, History, FileText, Settings, ShieldCheck, Send,
   PanelLeftClose, PanelLeftOpen, Menu, X, Bell, Sun, Moon, LogOut,
-  ChevronsUpDown, FlaskConical,
+  ChevronsUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils";
@@ -135,11 +135,11 @@ export default function AppShell({ user, children }: { user: User; children: Rea
       {!collapsed && (
         <div className="mx-3 mb-3 rounded-xl border border-line bg-card2 p-3">
           <div className="flex items-center gap-2 text-[11px] font-semibold text-muted">
-            <FlaskConical size={13} className="text-amber-400" />
-            Demo providers active
+            <Radar size={13} className="text-mint" />
+            VPS worker discovery
           </div>
           <p className="mt-1 text-[10.5px] leading-snug text-muted/80">
-            Sample corpus enabled. Connect Telegram API in Administration for live discovery.
+            Keyword searches are queued and processed by the connected Telethon worker.
           </p>
         </div>
       )}
