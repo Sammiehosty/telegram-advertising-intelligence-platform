@@ -264,8 +264,8 @@ export default function DiscoverPage() {
               </Field>
               <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-[11px] leading-snug text-amber-200/80">
                 <FlaskConical size={12} className="mr-1 inline text-amber-400" />
-                Live Telegram scraping requires API credentials (Administration). Until then, the
-                sample corpus provider returns clearly-flagged demonstration data.
+                Live discovery is processed by the VPS Telegram worker. Configure Telegram credentials
+                in Administration and make sure the worker service is online.
               </div>
             </div>
           </div>
