@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
-// Forward browser API requests to the PHP + MySQL backend.
-// Override this in Vercel if the API hostname changes.
-const phpApi = (
+// Browser requests to /api/* are proxied to the PHP + MySQL backend.
+// The fallback keeps the production API URL configured even when the
+// Vercel environment variable has not yet been added.
+const phpApiBase = (
   process.env.TELEAD_PHP_API_URL || "https://teleads.sammiehosty.com/api"
 ).replace(/\/$/, "");
 
@@ -12,7 +13,7 @@ const nextConfig: NextConfig = {
       beforeFiles: [
         {
           source: "/api/:path*",
-          destination: `${phpApi}/:path*`,
+          destination: `${phpApiBase}/:path*`,
         },
       ],
     };
