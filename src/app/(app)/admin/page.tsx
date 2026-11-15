@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ShieldCheck, Database, Workflow, Send, Users, Radar, FileWarning, KeyRound,
-  Loader2, Trash2, Save, Bot, ScrollText, Activity,
+  Loader2, Trash2, Save, Bot, ScrollText, Activity, Wifi,
 } from "lucide-react";
 import { Card, SectionTitle, StatusBadge, Badge, Field, inputCls, btnPrimary, btnGhost, SkeletonRows } from "@/components/ui";
 import { timeAgo, cn } from "@/lib/utils";
@@ -44,6 +44,8 @@ export default function AdminPage() {
   // telegram form
   const [tg, setTg] = useState({ apiId: "", apiHash: "", sessionString: "", notes: "" });
   const [tgState, setTgState] = useState<{ configured: boolean; status: string; apiId: string; apiHashSet: boolean; sessionSet: boolean; instructions: string } | null>(null);
+  const [tgTestBusy, setTgTestBusy] = useState(false);
+  const [tgTest, setTgTest] = useState<{ workerOnline: boolean; telegramConnected: boolean; lastSeen: string | null; message: string } | null>(null);
   // ai form
   const [ai, setAi] = useState({ endpoint: "", model: "gpt-4o-mini", apiKey: "" });
 
@@ -91,6 +93,33 @@ export default function AdminPage() {
     await fetch("/api/admin/telegram", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clear: true }) });
     toast("info", "Telegram credentials cleared");
     load();
+  }
+
+  async function testTelegramConnection() {
+    setTgTestBusy(true);
+    setTgTest(null);
+    try {
+      const res = await fetch("/api/admin/telegram/test", { cache: "no-store" });
+      const d = await res.json();
+      if (!res.ok || !d.ok) throw new Error(d.error || "Connection test failed.");
+      setTgTest({
+        workerOnline: Boolean(d.workerOnline),
+        telegramConnected: Boolean(d.telegramConnected),
+        lastSeen: d.lastSeen ?? null,
+        message: d.message ?? "Connection test completed.",
+      });
+      if (d.workerOnline && d.telegramConnected) {
+        toast("success", "VPS worker connected", "Telegram session and PHP API heartbeat are both healthy.");
+      } else {
+        toast("error", "Connection test incomplete", d.message || "The VPS worker has not reported a healthy Telegram connection recently.");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not test the connection.";
+      setTgTest({ workerOnline: false, telegramConnected: false, lastSeen: null, message });
+      toast("error", "Connection test failed", message);
+    } finally {
+      setTgTestBusy(false);
+    }
   }
 
   async function saveWeights() {
@@ -275,12 +304,26 @@ export default function AdminPage() {
                 <textarea className={inputCls + " min-h-[70px] resize-y font-mono text-xs"} value={tg.sessionString} onChange={(e) => setTg({ ...tg, sessionString: e.target.value })} placeholder={tgState?.sessionSet ? "•••••• stored ••••••" : "1BQAAAA…"} />
               </Field>
               <Field label="Internal notes"><input className={inputCls} value={tg.notes} onChange={(e) => setTg({ ...tg, notes: e.target.value })} placeholder="Production account — +1 555…" /></Field>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button onClick={saveTelegram} disabled={busy} className={btnPrimary}>
                   {busy ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save credentials
                 </button>
+                <button onClick={testTelegramConnection} disabled={tgTestBusy} className={btnGhost}>
+                  {tgTestBusy ? <Loader2 size={14} className="animate-spin" /> : <Wifi size={14} />} Test connection
+                </button>
                 {tgState?.configured && <button onClick={clearTelegram} className={btnGhost + " !text-rose-300"}>Remove</button>}
               </div>
+              {tgTest && (
+                <div className={cn("rounded-xl border p-3 text-xs", tgTest.workerOnline && tgTest.telegramConnected ? "border-mint/25 bg-mint/5 text-mint" : "border-amber-400/25 bg-amber-400/5 text-amber-200")}>
+                  <p className="font-bold">{tgTest.workerOnline && tgTest.telegramConnected ? "All connections healthy" : "Connection needs attention"}</p>
+                  <p className="mt-1 leading-relaxed">{tgTest.message}</p>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+                    <span>VPS worker: {tgTest.workerOnline ? "Online" : "Offline"}</span>
+                    <span>Telegram: {tgTest.telegramConnected ? "Connected" : "Not confirmed"}</span>
+                    {tgTest.lastSeen && <span>Last heartbeat: {timeAgo(tgTest.lastSeen)}</span>}
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
           <Card>
@@ -336,9 +379,7 @@ export default function AdminPage() {
               <SectionTitle title="Discovery providers" sub="Modular pipeline — enable or disable each source" />
               <div className="space-y-2.5">
                 {([
-                  ["mtproto", "Telegram Global Search (MTProto)", "Official API search via Telethon session."],
-                  ["directory", "Public Directory & Search-Engine Scan", "Discovers t.me links indexed by search engines."],
-                  ["demo", "Sample Corpus Provider", "Deterministic demonstration dataset, clearly flagged in the UI."],
+                  ["mtproto", "VPS Telegram Worker (MTProto)", "Discovery jobs are queued in the PHP database and processed by your connected VPS Telethon worker."],
                 ] as [keyof AdminSettings["providers"], string, string][]).map(([key, label, desc]) => (
                   <button key={key} onClick={() => toggleProvider(key)} className="flex w-full items-center gap-3 rounded-xl border border-line bg-card2/60 px-4 py-3 text-left transition hover:border-linestrong">
                     <div className={cn("h-5 w-9 rounded-full p-0.5 transition", settings.providers[key] ? "bg-mint" : "bg-muted/30")}>
