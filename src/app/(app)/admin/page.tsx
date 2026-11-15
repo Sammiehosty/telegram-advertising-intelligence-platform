@@ -40,6 +40,8 @@ export default function AdminPage() {
   const [logs, setLogs] = useState<LogRow[]>([]);
   const [denied, setDenied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [testingTelegram, setTestingTelegram] = useState(false);
+  const [telegramTest, setTelegramTest] = useState<{ ok: boolean; message: string; workerOnline?: boolean; telegramConnected?: boolean; lastSeen?: string | null } | null>(null);
 
   // telegram form
   const [tg, setTg] = useState({ apiId: "", apiHash: "", sessionString: "", notes: "" });
@@ -84,6 +86,31 @@ export default function AdminPage() {
       setTg((p) => ({ ...p, apiHash: "", sessionString: "" }));
       load();
     } else toast("error", "Save failed", d.error);
+  }
+
+  async function testTelegramConnection() {
+    setTestingTelegram(true);
+    setTelegramTest(null);
+    try {
+      const res = await fetch("/api/admin/telegram/test", { method: "GET", cache: "no-store" });
+      const payload = await res.json().catch(() => ({}));
+      const result = {
+        ok: res.ok && payload.ok !== false && payload.success !== false,
+        message: payload.message || payload.error || (res.ok ? "Connection test completed." : `Connection test failed (HTTP ${res.status}).`),
+        workerOnline: payload.workerOnline ?? payload.worker_online,
+        telegramConnected: payload.telegramConnected ?? payload.telegram_connected,
+        lastSeen: payload.lastSeen ?? payload.last_seen ?? null,
+      };
+      setTelegramTest(result);
+      if (result.ok) toast("success", "Connection test passed", result.message);
+      else toast("error", "Connection test failed", result.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to reach the API.";
+      setTelegramTest({ ok: false, message });
+      toast("error", "Connection test failed", message);
+    } finally {
+      setTestingTelegram(false);
+    }
   }
 
   async function clearTelegram() {
@@ -275,12 +302,24 @@ export default function AdminPage() {
                 <textarea className={inputCls + " min-h-[70px] resize-y font-mono text-xs"} value={tg.sessionString} onChange={(e) => setTg({ ...tg, sessionString: e.target.value })} placeholder={tgState?.sessionSet ? "•••••• stored ••••••" : "1BQAAAA…"} />
               </Field>
               <Field label="Internal notes"><input className={inputCls} value={tg.notes} onChange={(e) => setTg({ ...tg, notes: e.target.value })} placeholder="Production account — +1 555…" /></Field>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button onClick={saveTelegram} disabled={busy} className={btnPrimary}>
                   {busy ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save credentials
                 </button>
+                <button onClick={testTelegramConnection} disabled={testingTelegram} className={btnGhost}>
+                  {testingTelegram ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />} Test connection
+                </button>
                 {tgState?.configured && <button onClick={clearTelegram} className={btnGhost + " !text-rose-300"}>Remove</button>}
               </div>
+              {telegramTest && (
+                <div className={cn("rounded-xl border p-3 text-xs", telegramTest.ok ? "border-mint/25 bg-mint/5 text-mint" : "border-rose-400/25 bg-rose-400/5 text-rose-200")}>
+                  <p className="font-semibold">{telegramTest.ok ? "Connection test passed" : "Connection test failed"}</p>
+                  <p className="mt-1 break-words">{telegramTest.message}</p>
+                  {(telegramTest.workerOnline !== undefined || telegramTest.telegramConnected !== undefined) && (
+                    <p className="mt-2 text-[11px] text-muted">VPS worker: {telegramTest.workerOnline ? "Online" : "Offline or unknown"} · Telegram session: {telegramTest.telegramConnected ? "Connected" : "Not connected or unknown"}{telegramTest.lastSeen ? ` · Last heartbeat: ${telegramTest.lastSeen}` : ""}</p>
+                  )}
+                </div>
+              )}
             </div>
           </Card>
           <Card>
