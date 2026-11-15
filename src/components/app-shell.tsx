@@ -136,10 +136,10 @@ export default function AppShell({ user, children }: { user: User; children: Rea
         <div className="mx-3 mb-3 rounded-xl border border-line bg-card2 p-3">
           <div className="flex items-center gap-2 text-[11px] font-semibold text-muted">
             <FlaskConical size={13} className="text-amber-400" />
-            Demo providers active
+            VPS worker discovery
           </div>
           <p className="mt-1 text-[10.5px] leading-snug text-muted/80">
-            Sample corpus enabled. Connect Telegram API in Administration for live discovery.
+            Searches are queued for your connected VPS Telegram worker.
           </p>
         </div>
       )}
