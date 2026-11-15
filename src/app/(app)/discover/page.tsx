@@ -262,10 +262,11 @@ export default function DiscoverPage() {
                   ))}
                 </div>
               </Field>
-              <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-[11px] leading-snug text-amber-200/80">
-                <FlaskConical size={12} className="mr-1 inline text-amber-400" />
-                Live Telegram scraping requires API credentials (Administration). Until then, the
-                sample corpus provider returns clearly-flagged demonstration data.
+              <div className="rounded-lg border border-mint/20 bg-mint/5 p-2.5 text-[11px] leading-snug text-mint/90">
+                <Radar size={12} className="mr-1 inline" />
+                VPS-only discovery. Searches are queued for the Telethon worker on your VPS.
+                No sample channels or database-directory fallback are used. If the worker is offline,
+                the search will remain queued or report an error.
               </div>
             </div>
           </div>
