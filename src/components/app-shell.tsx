@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Radar, Database, BarChart3, GitCompareArrows, Bookmark,
   Megaphone, Swords, History, FileText, Settings, ShieldCheck, Send,
   PanelLeftClose, PanelLeftOpen, Menu, X, Bell, Sun, Moon, LogOut,
-  ChevronsUpDown, Radar,
+  ChevronsUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils";
